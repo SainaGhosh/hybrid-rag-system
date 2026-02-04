@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid RAG System - Flask</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .status-bar {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-bar .status-item {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .status-item label {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .status-item span {
+            font-size: 1.3em;
+            color: #667eea;
+        }
+        
+        .init-section {
+            margin-bottom: 30px;
+        }
+        
+        .init-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .init-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .init-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .query-section {
+            display: none;
+        }
+        
+        .query-section.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .query-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .query-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .query-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .result-box {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .result-box h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .result-box p {
+            color: #555;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+        
+        .chunk-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .chunk-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chunk-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .chunk-score {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .chunk-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .chunk-url {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.85em;
+            word-break: break-all;
+        }
+        
+        .chunk-url:hover {
+            text-decoration: underline;
+        }
+        
+        .chunk-text {
+            color: #555;
+            line-height: 1.5;
+            font-size: 0.95em;
+            margin-top: 10px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            border-left-color: #f44;
+            color: #c33;
+        }
+        
+        .success {
+            background: #efe;
+            border-left-color: #4f4;
+            color: #333;
+        }
+        
+        .response-time {
+            text-align: right;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Hybrid RAG System</h1>
+            <p>Dense + BM25 + Reciprocal Rank Fusion</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <label>System Status</label>
+                    <span id="status">Not Ready</span>
+                </div>
+                <div class="status-item">
+                    <label>Chunks Loaded</label>
+                    <span id="chunks-count">0</span>
+                </div>
+                <div class="status-item">
+                    <label>Last Query Time</label>
+                    <span id="last-time">--</span>
+                </div>
+            </div>
+            
+            <!-- Initialization Section -->
+            <div class="init-section">
+                <button id="init-btn" class="init-btn" onclick="initializeSystem()">
+                    Initialize System (Load URLs & Build Indices)
+                </button>
+            </div>
+            
+            <!-- Query Section -->
+            <div class="query-section" id="query-section">
+                <div class="input-group">
+                    <label for="query-input">Enter Your Question:</label>
+                    <input 
+                        type="text" 
+                        id="query-input" 
+                        placeholder="e.g., What is machine learning?" 
+                        onkeypress="if(event.key === 'Enter') queryRAG();"
+                    >
+                </div>
+                <button class="query-btn" id="query-btn" onclick="queryRAG()">
+                    Search
+                </button>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your request...</p>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="results-section">
+                <div class="result-box" id="answer-box">
+                    <h3>Generated Answer</h3>
+                    <p id="answer-text"></p>
+                </div>
+                
+                <h3>Retrieved Chunks (Top 5)</h3>
+                <div id="chunks-container"></div>
+                
+                <div class="response-time">
+                    Response Time: <span id="response-time">--</span>s
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let systemInitialized = false;
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                updateStatus(data);
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+        
+        function updateStatus(data) {
+            const statusEl = document.getElementById('status');
+            const chunksEl = document.getElementById('chunks-count');
+            
+            if (data.system_initialized) {
+                statusEl.textContent = '✓ Ready';
+                statusEl.style.color = '#4f4';
+                systemInitialized = true;
+                document.getElementById('query-section').classList.add('active');
+                document.getElementById('init-btn').disabled = true;
+            } else {
+                statusEl.textContent = '✗ Not Ready';
+                statusEl.style.color = '#f44';
+                systemInitialized = false;
+                document.getElementById('query-section').classList.remove('active');
+            }
+            
+            chunksEl.textContent = data.chunks_loaded || 0;
+        }
+        
+        async function initializeSystem() {
+            const btn = document.getElementById('init-btn');
+            btn.disabled = true;
+            btn.textContent = 'Initializing...';
+            
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+            
+            try {
+                const response = await fetch('/api/initialize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('✓ System initialized!\n' + data.message);
+                    await checkHealth();
+                } else {
+                    alert('✗ Initialization failed:\n' + data.message);
+                    btn.disabled = false;
+                    btn.textContent = 'Initialize System (Load URLs & Build Indices)';
+                }
+            } catch (error) {
+                alert('✗ Error: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Initialize System (Load URLs & Build Indices)';
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        async function queryRAG() {
+            if (!systemInitialized) {
+                alert('Please initialize the system first!');
+                return;
+            }
+            
+            const query = document.getElementById('query-input').value.trim();
+            if (!query) {
+                alert('Please enter a query!');
+                return;
+            }
+            
+            const queryBtn = document.getElementById('query-btn');
+            queryBtn.disabled = true;
+            queryBtn.textContent = 'Searching...';
+            
+            const loading = document.getElementById('loading');
+            loading.classList.add('active');
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, top_k: 10 })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    alert('✗ Query failed:\n' + data.message);
+                }
+            } catch (error) {
+                alert('✗ Error: ' + error.message);
+            } finally {
+                queryBtn.disabled = false;
+                queryBtn.textContent = 'Search';
+                loading.classList.remove('active');
+            }
+        }
+        
+        function displayResults(data) {
+            // Update status
+            document.getElementById('last-time').textContent = data.response_time_seconds + 's';
+            document.getElementById('response-time').textContent = data.response_time_seconds;
+            
+            // Display answer
+            document.getElementById('answer-text').textContent = data.answer;
+            
+            // Display chunks
+            const container = document.getElementById('chunks-container');
+            container.innerHTML = '';
+            
+            data.retrieved_chunks.forEach((chunk, index) => {
+                const chunkEl = document.createElement('div');
+                chunkEl.className = 'chunk-card';
+                chunkEl.innerHTML = `
+                    <div class="chunk-meta">
+                        <div>
+                            <div class="chunk-title">#${index + 1} ${chunk.title}</div>
+                            <a href="${chunk.url}" target="_blank" class="chunk-url">${chunk.url}</a>
+                        </div>
+                        <div class="chunk-score">Score: ${chunk.score}</div>
+                    </div>
+                    <div class="chunk-text">${chunk.text}</div>
+                `;
+                container.appendChild(chunkEl);
+            });
+            
+            document.getElementById('results-section').classList.add('active');
+        }
+        
+        // Initial health check
+        checkHealth();
+        setInterval(checkHealth, 30000);
+    </script>
+</body>
+</html>
