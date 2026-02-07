@@ -115,6 +115,88 @@ Response:
   "response_time_seconds": 2.45
 }
 ```
+## Wikipedia Q&A Pair Generator
+
+### Features
+- Fetches content directly from Wikipedia URLs
+- Generates factual question-answer pairs
+- Outputs in clean JSON format
+- Configurable number of Q&A pairs
+- Respectful to Wikipedia servers (includes delays)
+
+### Input Format
+
+The script expects a JSON file with Wikipedia URLs in the following format:
+
+```json
+{
+  "fixed_wiki_urls": [
+    "https://en.wikipedia.org/wiki/Physics",
+    "https://en.wikipedia.org/wiki/Chemistry",
+    ...
+  ]
+}
+```
+
+### Output Format
+
+The generated Q&A dataset follows this structure:
+
+```json
+{
+  "dataset": "wikipedia_qa_100",
+  "data": [
+    {
+      "id": 1,
+      "question": "What is Physics?",
+      "answer": "Physics is the natural science of matter, involving the study of matter...",
+      "source_ids": ["Physics"],
+      "category": "Factual"
+    },
+    ...
+  ]
+}
+```
+### Usage
+
+### Option 1: Python Script
+
+```bash
+python wikipedia_qa_generator.py
+```
+
+The script will:
+1. Load URLs from `200_fixed_urls.json`
+2. Fetch Wikipedia articles (with progress updates)
+3. Generate 100 Q&A pairs
+4. Save to `wikipedia_qa_100.json`
+
+### Option 2: Jupyter Notebook
+
+Open `wikipedia_qa_generator.ipynb` in Jupyter or Google Colab and run the cells in order.
+
+### Configuration
+
+Edit these variables in the script or notebook:
+
+```python
+urls_file = "200_fixed_urls.json"      # Input file with URLs
+output_file = "wikipedia_qa_100.json"   # Output file
+num_qa_pairs = 100                      # Number of Q&A pairs to generate
+max_articles_to_fetch = 150             # How many articles to fetch
+```
+
+### How It Works
+
+1. **URL Loading**: Reads Wikipedia URLs from the input JSON file
+2. **Content Fetching**: Downloads and parses Wikipedia articles using BeautifulSoup
+3. **Text Extraction**: Extracts the main content paragraphs from each article
+4. **Q&A Generation**: Creates question-answer pairs based on:
+   - Article title
+   - First meaningful sentence/paragraph
+   - Content patterns (location, time, definition, etc.)
+5. **Output**: Saves in the specified JSON format with IDs and metadata
+
 
 ## Configuration
 
